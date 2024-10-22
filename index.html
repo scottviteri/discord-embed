@@ -1,246 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discord Channel Viewer</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: #2f3136;
-            color: #dcddde;
-        }
+// Find this part in your index.html and update it:
+function connectWebSocket(channelId) {
+    if (ws) {
+        ws.close();
+    }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
+    // Replace YOUR-APP-NAME with your Render service name
+    const wsUrl = `wss://YOUR-APP-NAME.onrender.com/ws/${channelId}`;
+    console.log('Connecting to:', wsUrl);
+    
+    ws = new WebSocket(wsUrl);
 
-        .header {
-            background-color: #36393f;
-            padding: 20px;
-            border-radius: 8px 8px 0 0;
-            border-bottom: 1px solid #202225;
-        }
+    ws.onopen = function() {
+        console.log('Connected to Discord bot');
+    };
 
-        .channel-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    ws.onmessage = function(event) {
+        const message = JSON.parse(event.data);
+        appendMessage(message);
+    };
 
-        .channel-name::before {
-            content: "#";
-            color: #72767d;
-        }
+    ws.onclose = function() {
+        console.log('WebSocket connection closed');
+        // Try to reconnect after 5 seconds
+        setTimeout(() => connectWebSocket(channelId), 5000);
+    };
 
-        .messages-container {
-            background-color: #36393f;
-            border-radius: 0 0 8px 8px;
-            padding: 20px;
-            height: 80vh;
-            overflow-y: auto;
-        }
-
-        .message {
-            display: flex;
-            margin-bottom: 1rem;
-            padding: 8px;
-            border-radius: 4px;
-        }
-
-        .message:hover {
-            background-color: #32353b;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 1rem;
-        }
-
-        .message-content {
-            flex: 1;
-        }
-
-        .message-header {
-            display: flex;
-            align-items: baseline;
-            margin-bottom: 4px;
-        }
-
-        .author {
-            font-weight: 500;
-            color: #ffffff;
-            margin-right: 8px;
-        }
-
-        .timestamp {
-            font-size: 0.75rem;
-            color: #72767d;
-        }
-
-        .text {
-            color: #dcddde;
-            line-height: 1.4;
-        }
-
-        .setup-container {
-            background-color: #36393f;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        input {
-            width: 100%;
-            padding: 8px;
-            background-color: #40444b;
-            border: 1px solid #202225;
-            border-radius: 4px;
-            color: #dcddde;
-        }
-
-        button {
-            background-color: #5865f2;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #4752c4;
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div id="setupForm" class="setup-container">
-            <h2>Setup Discord Channel Viewer</h2>
-            <div class="input-group">
-                <label for="channelId">Channel ID</label>
-                <input type="text" id="channelId" placeholder="Enter Discord channel ID">
-            </div>
-            <div class="input-group">
-                <label for="channelName">Channel Name</label>
-                <input type="text" id="channelName" placeholder="Enter channel name (without #)">
-            </div>
-            <button onclick="connectToChannel()">Connect to Channel</button>
-        </div>
-
-        <div id="channelView" class="hidden">
-            <div class="header">
-                <div class="channel-name">channel-name</div>
-            </div>
-            <div class="messages-container" id="messages">
-                <!-- Messages will be inserted here -->
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let ws = null;
-
-        function connectToChannel() {
-            const channelId = document.getElementById('channelId').value.trim();
-            const channelName = document.getElementById('channelName').value.trim();
-
-            if (!channelId || !channelName) {
-                alert('Please enter both Channel ID and Channel Name');
-                return;
-            }
-
-            // Save to localStorage
-            localStorage.setItem('discordConfig', JSON.stringify({
-                channelId,
-                channelName
-            }));
-
-            // Update UI
-            document.querySelector('.channel-name').textContent = channelName;
-            document.getElementById('setupForm').classList.add('hidden');
-            document.getElementById('channelView').classList.remove('hidden');
-
-            // Connect WebSocket
-            connectWebSocket(channelId);
-        }
-
-        function connectWebSocket(channelId) {
-            if (ws) {
-                ws.close();
-            }
-        
-            // Replace YOUR-SERVICE-NAME with your actual Render service name
-            const wsUrl = `wss://YOUR-SERVICE-NAME.onrender.com/ws/${channelId}`;
-            ws = new WebSocket(wsUrl);
-        
-            ws.onmessage = function(event) {
-                const message = JSON.parse(event.data);
-                appendMessage(message);
-            };
-        
-            ws.onclose = function() {
-                console.log('WebSocket connection closed');
-                // Attempt to reconnect after 5 seconds
-                setTimeout(() => connectWebSocket(channelId), 5000);
-            };
-        
-            ws.onerror = function(error) {
-                console.error('WebSocket error:', error);
-            };
-        }
-
-        function appendMessage(message) {
-            const messagesDiv = document.getElementById('messages');
-            const messageElement = document.createElement('div');
-            messageElement.className = 'message';
-            
-            messageElement.innerHTML = `
-                <img class="avatar" src="${message.avatar_url || 'default-avatar.png'}" alt="${message.author}'s avatar">
-                <div class="message-content">
-                    <div class="message-header">
-                        <span class="author">${message.author}</span>
-                        <span class="timestamp">${new Date(message.timestamp).toLocaleString()}</span>
-                    </div>
-                    <div class="text">${message.content}</div>
-                </div>
-            `;
-
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        // Load saved configuration on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedConfig = localStorage.getItem('discordConfig');
-            if (savedConfig) {
-                const config = JSON.parse(savedConfig);
-                document.getElementById('channelId').value = config.channelId;
-                document.getElementById('channelName').value = config.channelName;
-                connectToChannel();
-            }
-        });
-    </script>
-</body>
-</html>
+    ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+}
