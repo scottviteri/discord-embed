@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Channel Embed</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #2f3136;
+            color: #dcddde;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background-color: #36393f;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 1px solid #202225;
+        }
+
+        .channel-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .channel-name::before {
+            content: "#";
+            color: #72767d;
+        }
+
+        .embed-container {
+            background-color: #36393f;
+            border-radius: 0 0 8px 8px;
+            padding: 20px;
+            height: 80vh;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .embed-container {
+                padding: 10px;
+                height: 70vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="channel-name">channel-name</div>
+        </div>
+        <div class="embed-container">
+            <iframe src="https://discord.com/widget?id=YOUR_CHANNEL_ID&theme=dark"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const config = {
+            channelId: 'YOUR_CHANNEL_ID', // Replace with your Discord channel ID
+            channelName: 'channel-name',   // Replace with your channel name
+        };
+
+        // Update the channel name and iframe source on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.channel-name').textContent = config.channelName;
+            document.querySelector('iframe').src = 
+                `https://discord.com/widget?id=${config.channelId}&theme=dark`;
+        });
+    </script>
+</body>
+</html>
