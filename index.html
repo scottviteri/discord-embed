@@ -46,11 +46,69 @@
             height: 80vh;
         }
 
+        .setup-container {
+            background-color: #36393f;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #dcddde;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            background-color: #40444b;
+            border: 1px solid #202225;
+            border-radius: 4px;
+            color: #dcddde;
+            margin-bottom: 5px;
+        }
+
+        button {
+            background-color: #5865f2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: #4752c4;
+        }
+
+        .edit-button {
+            background-color: #4f545c;
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
         iframe {
             width: 100%;
             height: 100%;
             border: none;
             border-radius: 4px;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #72767d;
+            margin-top: 5px;
         }
 
         @media (max-width: 768px) {
@@ -71,27 +129,73 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="channel-name">channel-name</div>
+        <div id="setupForm" class="setup-container">
+            <h2>Setup Your Discord Embed</h2>
+            <div class="input-group">
+                <label for="serverId">Server ID</label>
+                <input type="text" id="serverId" placeholder="Enter your Discord server ID">
+                <div class="help-text">To find your Server ID: Enable Developer Mode in Discord → Right-click server name → Copy Server ID</div>
+            </div>
+            <div class="input-group">
+                <label for="channelName">Channel Name</label>
+                <input type="text" id="channelName" placeholder="Enter channel name (without #)">
+            </div>
+            <button onclick="saveConfig()">Save and Show Discord</button>
         </div>
-        <div class="embed-container">
-            <iframe src="https://discord.com/widget?id=YOUR_CHANNEL_ID&theme=dark"></iframe>
+
+        <div id="embedView" class="hidden">
+            <div class="header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="channel-name">channel-name</div>
+                    <button class="edit-button" onclick="showSetup()">Edit</button>
+                </div>
+            </div>
+            <div class="embed-container">
+                <iframe id="discordEmbed"></iframe>
+            </div>
         </div>
     </div>
 
     <script>
-        // Configuration
-        const config = {
-            channelId: 'YOUR_CHANNEL_ID', // Replace with your Discord channel ID
-            channelName: 'channel-name',   // Replace with your channel name
-        };
-
-        // Update the channel name and iframe source on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelector('.channel-name').textContent = config.channelName;
-            document.querySelector('iframe').src = 
-                `https://discord.com/widget?id=${config.channelId}&theme=dark`;
+        // Check for saved configuration on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedConfig = localStorage.getItem('discordConfig');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                document.getElementById('serverId').value = config.serverId;
+                document.getElementById('channelName').value = config.channelName;
+                updateEmbed(config);
+            }
         });
+
+        function saveConfig() {
+            const config = {
+                serverId: document.getElementById('serverId').value.trim(),
+                channelName: document.getElementById('channelName').value.trim()
+            };
+
+            if (!config.serverId || !config.channelName) {
+                alert('Please enter both Server ID and Channel Name');
+                return;
+            }
+
+            localStorage.setItem('discordConfig', JSON.stringify(config));
+            updateEmbed(config);
+        }
+
+        function updateEmbed(config) {
+            document.querySelector('.channel-name').textContent = config.channelName;
+            document.getElementById('discordEmbed').src = 
+                `https://discord.com/widget?id=${config.serverId}&theme=dark`;
+            
+            document.getElementById('setupForm').classList.add('hidden');
+            document.getElementById('embedView').classList.remove('hidden');
+        }
+
+        function showSetup() {
+            document.getElementById('setupForm').classList.remove('hidden');
+            document.getElementById('embedView').classList.add('hidden');
+        }
     </script>
 </body>
 </html>
