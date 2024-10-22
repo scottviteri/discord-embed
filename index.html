@@ -5,7 +5,7 @@ function connectWebSocket(channelId) {
     }
 
     // Replace YOUR-APP-NAME with your Render service name
-    const wsUrl = `wss://YOUR-APP-NAME.onrender.com/ws/${channelId}`;
+    const wsUrl = `wss://discord-embed.onrender.com/ws/${channelId}`;
     console.log('Connecting to:', wsUrl);
     
     ws = new WebSocket(wsUrl);
