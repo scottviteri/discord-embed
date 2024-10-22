@@ -187,23 +187,25 @@
         }
 
         function connectWebSocket(channelId) {
-            // Close existing connection if any
             if (ws) {
                 ws.close();
             }
-
-            // Connect to your bot's WebSocket server
-            ws = new WebSocket(`ws://localhost:8000/ws/${channelId}`);
-
+        
+            // Replace YOUR-SERVICE-NAME with your actual Render service name
+            const wsUrl = `wss://YOUR-SERVICE-NAME.onrender.com/ws/${channelId}`;
+            ws = new WebSocket(wsUrl);
+        
             ws.onmessage = function(event) {
                 const message = JSON.parse(event.data);
                 appendMessage(message);
             };
-
+        
             ws.onclose = function() {
                 console.log('WebSocket connection closed');
+                // Attempt to reconnect after 5 seconds
+                setTimeout(() => connectWebSocket(channelId), 5000);
             };
-
+        
             ws.onerror = function(error) {
                 console.error('WebSocket error:', error);
             };
