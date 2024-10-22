@@ -42,11 +42,12 @@ async def on_message(message):
             'timestamp': message.created_at.isoformat(),
             'avatar_url': str(message.author.avatar.url) if message.author.avatar else None
         }
-        for connection in active_connections[channel_id]:
+        # Make a copy of the set to avoid modification during iteration
+        connections = active_connections[channel_id].copy()
+        for connection in connections:
             try:
                 await connection.send_json(message_data)
             except:
-                # Remove dead connections
                 active_connections[channel_id].remove(connection)
 
 @app.websocket("/ws/{channel_id}")
@@ -62,14 +63,17 @@ async def websocket_endpoint(websocket: WebSocket, channel_id: str):
         # Fetch last 50 messages when connecting
         channel = bot.get_channel(int(channel_id))
         if channel:
+            messages = []
             async for message in channel.history(limit=50):
-                message_data = {
+                messages.append({
                     'author': message.author.name,
                     'content': message.content,
                     'timestamp': message.created_at.isoformat(),
                     'avatar_url': str(message.author.avatar.url) if message.author.avatar else None
-                }
-                await websocket.send_json(message_data)
+                })
+            # Send messages in chronological order
+            for message in reversed(messages):
+                await websocket.send_json(message)
         
         # Keep connection alive and handle disconnection
         while True:
@@ -78,17 +82,33 @@ async def websocket_endpoint(websocket: WebSocket, channel_id: str):
     except Exception as e:
         print(f"WebSocket error: {e}")
     finally:
-        active_connections[channel_id].remove(websocket)
-        if not active_connections[channel_id]:
-            del active_connections[channel_id]
+        if channel_id in active_connections:
+            active_connections[channel_id].remove(websocket)
+            if not active_connections[channel_id]:
+                del active_connections[channel_id]
 
-# Run both FastAPI and Discord bot
+async def run_bot(bot_token):
+    try:
+        await bot.start(bot_token)
+    except Exception as e:
+        print(f"Bot error: {e}")
+
+async def run_fastapi():
+    config = uvicorn.Config(app, host="0.0.0.0", port=8000, loop="asyncio")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+async def main():
+    bot_token = os.getenv('DISCORD_BOT_TOKEN')
+    if not bot_token:
+        raise ValueError("Please set the DISCORD_BOT_TOKEN environment variable")
+    
+    # Run both the bot and FastAPI server
+    await asyncio.gather(
+        run_bot(bot_token),
+        run_fastapi()
+    )
+
 if __name__ == "__main__":
     import uvicorn
-    
-    # Start the Discord bot in a separate thread
-    bot_token = os.getenv('DISCORD_BOT_TOKEN')
-    asyncio.create_task(bot.start(bot_token))
-    
-    # Run the FastAPI server
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    asyncio.run(main())
