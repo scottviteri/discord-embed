@@ -1,104 +1,154 @@
-# Discord Channel Embed
+# Discord Channel Web Viewer
 
-A simple, customizable webpage that lets you embed any Discord channel using Discord's widget feature. Your server details are stored locally in your browser - no sensitive information is stored in the repository.
+A real-time Discord channel viewer that shows messages from your Discord server on a webpage. Uses a Discord bot for real-time message streaming and WebSocket connections for instant updates.
 
-## 🚀 Quick Setup
+## 🏗️ Architecture
 
-1. **Enable Discord Widget in Your Server**:
-   - Open Discord
-   - Go to Server Settings
-   - Click on "Widget"
-   - Enable "Enable Server Widget"
+This project consists of two parts:
+1. **Backend**: A Discord bot + WebSocket server (hosted on Render)
+2. **Frontend**: A static webpage (can be hosted on GitHub Pages)
 
-2. **Get Your Server ID**:
-   - Enable Developer Mode in Discord:
-     - User Settings → App Settings → Advanced → Developer Mode
-   - Right-click on your server name
-   - Click "Copy Server ID"
+```
+Discord Server <-> Discord Bot (Render) <-> WebSocket <-> Webpage
+```
 
-3. **Deploy to GitHub Pages**:
-   - Fork this repository
-   - Go to repository Settings
-   - Navigate to Pages section
-   - Select main branch as source
-   - Save changes
-   - Your site will be available at `https://[your-username].github.io/[repo-name]/`
+## 🚀 Setup Guide
 
-4. **Configure Your Embed**:
-   - Visit your deployed website
-   - Enter your Server ID
-   - Enter your channel name (without the #)
-   - Click "Save and Show Discord"
-   - Your settings will be saved in your browser
+### 1. Discord Bot Setup
 
-## 🔒 Privacy & Security
+1. Create a Discord Application:
+   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
+   - Click "New Application"
+   - Go to "Bot" section
+   - Click "Add Bot"
+   - Copy the bot token (you'll need this later)
 
-- Your Server ID and channel settings are stored only in your browser's local storage
-- No sensitive information is stored in the GitHub repository
-- Settings can be updated or cleared at any time using the Edit button
+2. Enable Required Intents:
+   - In the Bot section, enable:
+     - Presence Intent
+     - Server Members Intent
+     - Message Content Intent
 
-## 🎨 Features
+3. Invite Bot to Your Server:
+   - Go to OAuth2 > URL Generator
+   - Select scopes:
+     - bot
+     - applications.commands
+   - Select permissions:
+     - Read Messages/View Channels
+     - Read Message History
+   - Use the generated URL to invite the bot
 
-- Responsive design that works on mobile and desktop
-- Discord-themed interface
-- Local storage for settings
-- Easy configuration form
-- Edit button to update settings
-- Private storage of server details
-- Dark theme to match Discord's aesthetic
+### 2. Backend Deployment (Render)
 
-## 📱 Browser Support
+1. Fork this repository
 
-Tested and working on:
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Mobile browsers
+2. Sign up on [Render](https://render.com)
 
-## 🔧 Troubleshooting
+3. Create New Web Service:
+   - Connect your GitHub repository
+   - Select the repository
+   - Fill in details:
+     - Name: `discord-channel-bot` (or your preference)
+     - Environment: `Python 3`
+     - Build Command: `pip install -r requirements.txt`
+     - Start Command: `python discord_bot.py`
 
-If the widget doesn't appear:
-1. Verify that the Server ID is correct
-2. Make sure the Discord widget is enabled in your server
-3. Check that your server's widget settings allow the channel to be visible
-4. Clear your browser's local storage and try setting it up again
+4. Add Environment Variable:
+   - Key: `DISCORD_BOT_TOKEN`
+   - Value: Your Discord bot token
 
-## ⚠️ Common Issues
+5. Deploy the service
 
-**Widget Not Showing**:
-- Ensure "Enable Server Widget" is turned on in Discord server settings
-- Server ID must be correct and widget-enabled
-- At least one channel must be visible to the widget
+### 3. Frontend Setup
 
-**Settings Not Saving**:
-- Make sure your browser allows local storage
-- Try using a different browser if issues persist
+1. Get your channel information:
+   - Enable Developer Mode in Discord (User Settings > App Settings > Advanced)
+   - Right-click your channel and "Copy ID"
+   - Note your channel name (without the #)
 
-## 🛠️ Advanced Customization
+2. Update the WebSocket URL in index.html:
+   ```javascript
+   const wsUrl = `wss://YOUR-RENDER-SERVICE.onrender.com/ws/${channelId}`;
+   ```
 
-Want to customize the appearance? You can modify:
-1. Open `index.html`
-2. Find the `<style>` section
-3. Adjust colors, sizes, and layout to match your preferences
+3. Host the frontend:
+   - GitHub Pages (recommended)
+   - Any static hosting service
+   - Local file system
+
+## 🔧 Configuration
+
+### Backend Environment Variables
+- `DISCORD_BOT_TOKEN`: Your Discord bot token
+- `PORT`: (Optional) Port for the WebSocket server (defaults to 8000)
+
+### Frontend Configuration
+Enter in the web interface:
+- Channel ID: Your Discord channel ID
+- Channel Name: The channel name (without #)
+
+## 📡 API Endpoints
+
+- `GET /`: Bot status and connection information
+- `GET /health`: Health check endpoint with Discord connection status
+- `WS /ws/{channel_id}`: WebSocket endpoint for real-time messages
+
+## 🔍 Monitoring
+
+Check your bot's status:
+1. Visit `https://YOUR-SERVICE.onrender.com/`
+2. Check the health endpoint: `https://YOUR-SERVICE.onrender.com/health`
+
+## 🐛 Troubleshooting
+
+1. **WebSocket Not Connecting**:
+   - Check if the bot is online in Discord
+   - Verify your channel ID
+   - Check the Render service logs
+
+2. **No Messages Showing**:
+   - Ensure bot has correct permissions
+   - Verify the channel ID is correct
+   - Check browser console for errors
+
+3. **Render Deployment Issues**:
+   - Verify environment variables are set
+   - Check build and start logs
+   - Ensure requirements.txt is present
+
+## 📚 Development
+
+### Local Development
+1. Clone the repository
+2. Install dependencies: `pip install -r requirements.txt`
+3. Create `.env` file with `DISCORD_BOT_TOKEN=your_token`
+4. Run: `python discord_bot.py`
+
+### Testing WebSocket
+```javascript
+// Browser console test
+const ws = new WebSocket('wss://YOUR-SERVICE.onrender.com/ws/CHANNEL_ID');
+ws.onmessage = (event) => console.log(JSON.parse(event.data));
+```
+
+## 🔐 Security Notes
+
+- Keep your bot token secret
+- Use environment variables for sensitive data
+- Consider adding authentication for production use
 
 ## 📝 License
 
-MIT License - feel free to use this code for any purpose.
+MIT License - See LICENSE file for details
 
 ## 🤝 Contributing
 
-Contributions are welcome! To contribute:
 1. Fork the repository
-2. Create a new branch
-3. Make your changes
-4. Submit a pull request
-
-## 🆘 Support
-
-If you encounter any issues:
-1. Check the [Issues](../../issues) section
-2. Create a new issue if your problem isn't already reported
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ---
 
